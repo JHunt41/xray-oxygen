@@ -5,7 +5,7 @@
 #include "string"
 
 XRCORE_API CInifile const* pSettings = nullptr;
-XRCORE_API CInifile const* pSettingsAuth = nullptr;
+//XRCORE_API CInifile const* pSettingsAuth = nullptr;
 
 CInifile* CInifile::Create(const char* szFileName, BOOL ReadOnly) {
     return xr_new<CInifile>(szFileName, ReadOnly);
@@ -475,6 +475,23 @@ shared_str CInifile::r_string_wb(LPCSTR S, LPCSTR L) const {
     if ('"' == _original[0])
         return shared_str(&_original[0] + 1); // skip begin
     return shared_str(_original);
+}
+std::string CInifile::r_string_wbStd(LPCSTR S, LPCSTR L) const {
+	LPCSTR _base = r_string(S, L);
+
+	if (!_base)
+		return std::string(nullptr);
+
+	std::string _original;
+	strcpy(_original.data(), _base);
+	size_t _len = strlen((char *)_original.c_str()); // x64
+	if (!_len)
+		return std::string("");
+	if ('"' == _original[_len - 1])
+		_original[_len - 1] = 0; // skip end
+	if ('"' == _original[0])
+		return std::string(&_original[0] + 1); // skip begin
+	return std::string(_original);
 }
 
 u8 CInifile::r_u8(LPCSTR S, LPCSTR L) const {

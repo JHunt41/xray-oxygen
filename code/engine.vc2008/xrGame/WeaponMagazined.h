@@ -17,7 +17,7 @@ private:
 	typedef CWeapon inherited;
 protected:
 	//звук текущего выстрела
-	shared_str		m_sSndShotCurrent;
+	std::string		m_sSndShotCurrent;
 
 	//дополнительная информация о глушителе
 	LPCSTR			m_sSilencerFlameParticles;
@@ -69,7 +69,7 @@ protected:
 	virtual void	state_Misfire	(float dt);
 public:
 					CWeaponMagazined	(ESoundTypes eSoundType=SOUND_TYPE_WEAPON_SUBMACHINEGUN);
-	virtual			~CWeaponMagazined	();
+	virtual			~CWeaponMagazined	() = default;
 
 	virtual void	Load			(LPCSTR section);
 			void	LoadSilencerKoeffs();
@@ -87,6 +87,7 @@ public:
 	virtual void	net_Import		(NET_Packet& P);
 
 	virtual void	OnH_A_Chield		();
+			void	OnH_B_Independent	(bool) override;
 
 	virtual bool	Attach			(PIItem pIItem, bool b_send_event);
 	virtual bool	Detach			(const char* item_section_name, bool b_spawn_item);
@@ -145,7 +146,7 @@ public:
 			void	OnNextFireMode		();
 			void	OnPrevFireMode		();
 			bool	HasFireModes		() { return m_bHasDifferentFireModes; };
-	virtual	int		GetCurrentFireMode	() { return m_aFireModes[m_iCurFireMode]; };	
+	virtual	int		GetCurrentFireMode	() { return HasFireModes() ? m_aFireModes[m_iCurFireMode] : 1; };
 
 	virtual void	save				(NET_Packet &output_packet);
 	virtual void	load				(IReader &input_packet);
@@ -167,6 +168,8 @@ protected:
 
 	virtual	int		ShotsFired			() { return m_iShotNum; }
 	virtual float	GetWeaponDeterioration	();
+	
+	virtual void	RemoveZoomInertionEffector();
 
 
 	virtual void	FireBullet			(const Fvector& pos, 

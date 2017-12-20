@@ -1,14 +1,13 @@
 #pragma once
 // Modifer: sv3nk
-#ifdef _EDITOR
-	#include "..\editors\ECore\stdafx.h"
-#else
 #ifndef INGAME_EDITOR
 #	define	INGAME_EDITOR
 #endif // #ifndef INGAME_EDITOR
+
 #ifndef _WIN32_WINNT
 #	define _WIN32_WINNT 0x0600
 #endif
+
 #include "../xrCore/xrCore.h"
 #include "../xrCore/xrAPI.h"
 
@@ -41,9 +40,11 @@
 // Our headers
 #include "engine.h"
 #include "defines.h"
+
 #ifndef NO_XRLOG
 #include "../xrcore/log.h"
 #endif
+
 #include "device.h"
 #include "../xrcore/fs.h"
 #include "../xrcdb/xrXRC.h"
@@ -69,5 +70,3 @@ extern ENGINE_API CInifile *pGameIni;
 
 #define READ_IF_EXISTS(ltx,method,section,name,default_value)\
 	(((ltx)->line_exist(section, name)) ? ((ltx)->method(section, name)) : (default_value))
-
-#endif // !M_BORLAND

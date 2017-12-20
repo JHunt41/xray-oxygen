@@ -15,31 +15,6 @@ Flags32 g_stats_flags		= {0};
 // stats
 DECLARE_RP(Stats);
 
-class	optimizer	{
-	float	average_	;
-	BOOL	enabled_	;
-public:
-	optimizer	()		{
-		average_	= 30.f;
-		// because Engine is not exist
-		enabled_	= FALSE;
-	}
-
-	BOOL	enabled	()	{ return enabled_;	}
-	void	enable	()	{ if (!enabled_)	{ Engine.External.tune_resume	();	enabled_=TRUE;	}}
-	void	disable	()	{ if (enabled_)		{ Engine.External.tune_pause	();	enabled_=FALSE; }}
-	void	update	(float value)	{
-		if (value < average_*0.7f)	{
-			// 25% deviation
-			enable	();
-		} else {
-			disable	();
-		};
-		average_	= 0.99f*average_ + 0.01f*value;
-	};
-};
-static	optimizer	vtune;
-
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -163,25 +138,12 @@ void CStats::Show()
 	if( ddd.rem < frm/2.0f ){
 		pFont->SetColor	(0xFFFFFFFF	);
 		pFont->OutSet	(0,0);
-		pFont->OutNext	(*eval_line_1);
-		pFont->OutNext	(*eval_line_2);
-		pFont->OutNext	(*eval_line_3);
 		pFont->OnRender	();
 	}
 
 	CGameFont& F = *pFont;
 	float		f_base_size	= 0.01f;
 				F.SetHeightI	(f_base_size);
-
-	if (vtune.enabled())	{
-		float sz		= pFont->GetHeight();
-		pFont->SetHeightI(0.02f);
-		pFont->SetColor	(0xFFFF0000	);
-		pFont->OutSet	(Device.dwWidth/2.0f+(pFont->SizeOf_("--= tune =--")/2.0f),Device.dwHeight/2.0f);
-		pFont->OutNext	("--= tune =--");
-		pFont->OnRender	();
-		pFont->SetHeight(sz);
-	};
 
 	// Show them
 	if (psDeviceFlags.test(rsStatistic))
@@ -422,18 +384,6 @@ void CStats::OnDeviceCreate			()
 #ifndef DEDICATED_SERVER
 	pFont	= xr_new<CGameFont>		("stat_font", CGameFont::fsDeviceIndependent);
 #endif
-	
-	if(!pSettings->section_exist("evaluation")
-		||!pSettings->line_exist("evaluation","line1")
-		||!pSettings->line_exist("evaluation","line2")
-		||!pSettings->line_exist("evaluation","line3") )
-		FATAL	("");
-
-	eval_line_1 = pSettings->r_string_wb("evaluation","line1");
-	eval_line_2 = pSettings->r_string_wb("evaluation","line2");
-	eval_line_3 = pSettings->r_string_wb("evaluation","line3");
-
-	// 
 #ifdef DEBUG
 	if (!g_bDisableRedText)			SetLogCB	(_LogCallback);
 #endif

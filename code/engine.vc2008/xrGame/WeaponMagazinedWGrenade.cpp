@@ -99,9 +99,9 @@ BOOL CWeaponMagazinedWGrenade::net_Spawn(CSE_Abstract* DC)
 
 		if(b_if_grenade_mode || b_if_simple_mode) 
 		{
-			shared_str fake_grenade_name = pSettings->r_string(pM->back().m_ammoSect, "fake_grenade_name");
+			std::string fake_grenade_name = pSettings->r_string(pM->back().m_ammoSect.c_str(), "fake_grenade_name");
 			
-			CRocketLauncher::SpawnRocket(*fake_grenade_name, this);
+			CRocketLauncher::SpawnRocket(fake_grenade_name.c_str(), this);
 		}
 	}
 	return l_res;
@@ -216,33 +216,8 @@ void CWeaponMagazinedWGrenade::state_Fire(float dt)
 {
 	VERIFY(fOneShotTime>0.f);
 
-	//режим стрельбы подствольника
-	if(m_bGrenadeMode)
-	{
-		/*
-		fTime					-=dt;
-		while (fTime<=0 && (iAmmoElapsed>0) && (IsWorking() || m_bFireSingleShot))
-		{
-			++m_iShotNum;
-			OnShot			();
-			
-			// Ammo
-			if(Local()) 
-			{
-				VERIFY				(m_magazine.size());
-				m_magazine.pop_back	();
-				--iAmmoElapsed;
-			
-				VERIFY((u32)iAmmoElapsed == m_magazine.size());
-			}
-		}
-		UpdateSounds				();
-		if(m_iShotNum == m_iQueueSize) 
-			FireEnd();
-		*/
-	} 
 	//режим стрельбы очередями
-	else 
+	if(!m_bGrenadeMode)
 		inherited::state_Fire(dt);
 }
 
@@ -441,7 +416,7 @@ bool CWeaponMagazinedWGrenade::CanAttach(PIItem pIItem)
 	if(pGrenadeLauncher &&
 	   ALife::eAddonAttachable == m_eGrenadeLauncherStatus &&
 	   0 == (m_flagsAddOnState&CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher) &&
-	   !xr_strcmp(*m_sGrenadeLauncherName, pIItem->object().cNameSect()))
+	   !strcmp(m_sGrenadeLauncherName.c_str(), pIItem->object().cNameSect().c_str()))
        return true;
 	else
 		return inherited::CanAttach(pIItem);
@@ -451,7 +426,7 @@ bool CWeaponMagazinedWGrenade::CanDetach(LPCSTR item_section_name)
 {
 	if(ALife::eAddonAttachable == m_eGrenadeLauncherStatus &&
 	   0 != (m_flagsAddOnState&CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher) &&
-	   !xr_strcmp(*m_sGrenadeLauncherName, item_section_name))
+	   !strcmp(m_sGrenadeLauncherName.c_str(), item_section_name))
 	   return true;
 	else
 	   return inherited::CanDetach(item_section_name);
@@ -464,7 +439,7 @@ bool CWeaponMagazinedWGrenade::Attach(PIItem pIItem, bool b_send_event)
 	if(pGrenadeLauncher &&
 	   ALife::eAddonAttachable == m_eGrenadeLauncherStatus &&
 	   0 == (m_flagsAddOnState&CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher) &&
-	   !xr_strcmp(*m_sGrenadeLauncherName, pIItem->object().cNameSect()))
+	   !strcmp(m_sGrenadeLauncherName.c_str(), pIItem->object().cNameSect().c_str()))
 	{
 		m_flagsAddOnState |= CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher;
 
@@ -491,7 +466,7 @@ bool CWeaponMagazinedWGrenade::Detach(LPCSTR item_section_name, bool b_spawn_ite
 {
 	if (ALife::eAddonAttachable == m_eGrenadeLauncherStatus &&
 	   0 != (m_flagsAddOnState&CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher) &&
-	   !xr_strcmp(*m_sGrenadeLauncherName, item_section_name))
+	   !std::strcmp(m_sGrenadeLauncherName.c_str(), item_section_name))
 	{
 		m_flagsAddOnState &= ~CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher;
 		
@@ -521,7 +496,7 @@ void CWeaponMagazinedWGrenade::InitAddons()
 	{
 		if(IsGrenadeLauncherAttached())
 		{
-			CRocketLauncher::m_fLaunchSpeed = pSettings->r_float(*m_sGrenadeLauncherName,"grenade_vel");
+			CRocketLauncher::m_fLaunchSpeed = pSettings->r_floatStd(m_sGrenadeLauncherName,"grenade_vel");
 		}
 	}
 }

@@ -615,63 +615,62 @@ void CUIActorMenu::highlight_armament( PIItem item, CUIDragDropListEx* ddlist )
 	highlight_weapons_for_addon( item, ddlist );
 }
 
-void CUIActorMenu::highlight_ammo_for_weapon( PIItem weapon_item, CUIDragDropListEx* ddlist )
+void CUIActorMenu::highlight_ammo_for_weapon(PIItem weapon_item, CUIDragDropListEx* ddlist)
 {
-	VERIFY( weapon_item );
-	VERIFY( ddlist );
+	VERIFY(weapon_item);
+	VERIFY(ddlist);
 	static xr_vector<shared_str>	ammo_types;
 	ammo_types.clear();
 
 	CWeapon* weapon = smart_cast<CWeapon*>(weapon_item);
-	if ( !weapon )
+	if (!weapon)
 	{
 		return;
 	}
-	ammo_types.assign( weapon->m_ammoTypes.begin(), weapon->m_ammoTypes.end() );
+	ammo_types.assign(weapon->m_ammoTypes.begin(), weapon->m_ammoTypes.end());
 
 	CWeaponMagazinedWGrenade* wg = smart_cast<CWeaponMagazinedWGrenade*>(weapon_item);
-	if ( wg )
+	if (wg)
 	{
-		if ( wg->IsGrenadeLauncherAttached() && wg->m_ammoTypes2.size() )
+		if (wg->IsGrenadeLauncherAttached() && wg->m_ammoTypes2.size())
 		{
-			ammo_types.insert( ammo_types.end(), wg->m_ammoTypes2.begin(), wg->m_ammoTypes2.end() );
+			ammo_types.insert(ammo_types.end(), wg->m_ammoTypes2.begin(), wg->m_ammoTypes2.end());
 		}
 	}
-	
-	if ( ammo_types.size() == 0 )
+
+	if (ammo_types.size() == 0)
 	{
 		return;
 	}
-	xr_vector<shared_str>::iterator ite = ammo_types.end();
-	
+
 	u32 const cnt = ddlist->ItemsCount();
-	for ( u32 i = 0; i < cnt; ++i )
+	for (u32 i = 0; i < cnt; ++i)
 	{
 		CUICellItem* ci = ddlist->GetItemIdx(i);
 		PIItem item = (PIItem)ci->m_pData;
-		if ( !item )
+		if (!item)
 		{
 			continue;
 		}
 		CWeaponAmmo* ammo = smart_cast<CWeaponAmmo*>(item);
-		if ( !ammo )
+		if (!ammo)
 		{
-			highlight_addons_for_weapon( weapon_item, ci );
+			highlight_addons_for_weapon(weapon_item, ci);
 			continue; // for i
 		}
+
 		shared_str const& ammo_name = item->object().cNameSect();
 
-		xr_vector<shared_str>::iterator itb = ammo_types.begin();
-		for ( ; itb != ite; ++itb )
+
+		for (auto it : ammo_types)
 		{
-			if ( ammo_name._get() == (*itb)._get() )
+			if (ammo_name == it)
 			{
 				ci->m_select_armament = true;
 				break; // itb
 			}
 		}
-	}//for i
-
+	}
 }
 
 void CUIActorMenu::highlight_weapons_for_ammo( PIItem ammo_item, CUIDragDropListEx* ddlist )
@@ -700,9 +699,12 @@ void CUIActorMenu::highlight_weapons_for_ammo( PIItem ammo_item, CUIDragDropList
 		{
 			continue;
 		}
+		
 
-		xr_vector<shared_str>::iterator itb = weapon->m_ammoTypes.begin();
-		xr_vector<shared_str>::iterator ite = weapon->m_ammoTypes.end();
+		//xr_vector<std::string>::iterator itb = weapon->m_ammoTypes.begin();
+		//xr_vector<std::string>::iterator ite = weapon->m_ammoTypes.end();
+
+		/*
 		for ( ; itb != ite; ++itb )
 		{
 			if ( ammo_name._get() == (*itb)._get() )
@@ -711,14 +713,26 @@ void CUIActorMenu::highlight_weapons_for_ammo( PIItem ammo_item, CUIDragDropList
 				break; // for itb
 			}
 		}
+		*/
+
+		for (auto it : weapon->m_ammoTypes)
+		{
+			if (ammo_name == it)
+			{
+				ci->m_select_armament = true;
+				break; // itb 
+			}
+		}
+
 		
 		CWeaponMagazinedWGrenade* wg = smart_cast<CWeaponMagazinedWGrenade*>(item);
 		if ( !wg || !wg->IsGrenadeLauncherAttached() || !wg->m_ammoTypes2.size() )
 		{
 			continue; // for i
 		}
-		itb = wg->m_ammoTypes2.begin();
-		ite = wg->m_ammoTypes2.end();
+		//itb = wg->m_ammoTypes2.begin();
+		//ite = wg->m_ammoTypes2.end();
+		/*
 		for ( ; itb != ite; ++itb )
 		{
 			if ( ammo_name._get() == (*itb)._get() )
@@ -727,6 +741,16 @@ void CUIActorMenu::highlight_weapons_for_ammo( PIItem ammo_item, CUIDragDropList
 				break; // for itb
 			}
 		}
+		*/
+		for (auto it : wg->m_ammoTypes2)
+		{
+			if (ammo_name == it)
+			{
+				ci->m_select_armament = true;
+				break; // itb 
+			}
+		}
+
 	}//for i
 
 }
@@ -932,4 +956,90 @@ void CUIActorMenu::UpdateConditionProgressBars()
 		else
 			ci->m_select_equipped = false;
 	}	
+}
+#include "../ai_space.h"
+#include "../../xrServerEntities/script_engine.h"
+
+using namespace luabind;
+
+void CUIActorMenu::TryRepairItem(CUIWindow* w, void* d)
+{
+	PIItem item = get_upgrade_item();
+	if (!item)
+	{
+		return;
+	}
+	if (item->GetCondition() > 0.99f)
+	{
+		return;
+	}
+	LPCSTR item_name = item->m_section_id.c_str();
+	LPCSTR partner = m_pPartnerInvOwner->CharacterInfo().Profile().c_str();
+
+	luabind::functor<bool> funct;
+	R_ASSERT2(
+		ai().script_engine().functor("inventory_upgrades.can_repair_item", funct),
+		make_string("Failed to get functor <inventory_upgrades.can_repair_item>, item = %s", item_name)
+	);
+	bool can_repair = funct(item_name, item->GetCondition(), partner);
+
+	luabind::functor<LPCSTR> funct2;
+	R_ASSERT2(
+		ai().script_engine().functor("inventory_upgrades.question_repair_item", funct2),
+		make_string("Failed to get functor <inventory_upgrades.question_repair_item>, item = %s", item_name)
+	);
+	LPCSTR question = funct2(item_name, item->GetCondition(), can_repair, partner);
+
+	if (can_repair)
+	{
+		m_repair_mode = true;
+		CallMessageBoxYesNo(question);
+	}
+	else
+		CallMessageBoxOK(question);
+}
+
+void CUIActorMenu::RepairEffect_CurItem()
+{
+	PIItem item = CurrentIItem();
+	if (!item)
+	{
+		return;
+	}
+	LPCSTR item_name = item->m_section_id.c_str();
+
+	luabind::functor<void>	funct;
+	R_ASSERT(ai().script_engine().functor("inventory_upgrades.effect_repair_item", funct));
+	funct(item_name, item->GetCondition());
+
+	item->SetCondition(1.0f);
+	UpdateConditionProgressBars();
+	SeparateUpgradeItem();
+	CUICellItem* itm = CurrentItem();
+	if (itm)
+		itm->UpdateConditionProgressBar();
+
+}
+
+bool CUIActorMenu::CanUpgradeItem(PIItem item)
+{
+	VERIFY(item && m_pPartnerInvOwner);
+	LPCSTR item_name = item->m_section_id.c_str();
+	LPCSTR partner = m_pPartnerInvOwner->CharacterInfo().Profile().c_str();
+
+	luabind::functor<bool> funct;
+	R_ASSERT2(
+		ai().script_engine().functor("inventory_upgrades.can_upgrade_item", funct),
+		make_string("Failed to get functor <inventory_upgrades.can_upgrade_item>, item = %s, mechanic = %s", item_name, partner)
+	);
+
+	return funct(item_name, partner);
+}
+
+void CUIActorMenu::CurModeToScript()
+{
+	int mode = (int)m_currMenuMode;
+	luabind::functor<void>	funct;
+	R_ASSERT(ai().script_engine().functor("actor_menu.actor_menu_mode", funct));
+	funct(mode);
 }

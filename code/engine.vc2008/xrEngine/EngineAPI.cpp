@@ -12,17 +12,12 @@ extern xr_token* vid_quality_token;
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-void __cdecl dummy		(void)	{
-};
 CEngineAPI::CEngineAPI	()
 {
 	hGame			= 0;
 	hRender			= 0;
-	hTuner			= 0;
 	pCreate			= 0;
 	pDestroy		= 0;
-	tune_pause		= dummy	;
-	tune_resume		= dummy	;
 }
 
 CEngineAPI::~CEngineAPI()
@@ -34,7 +29,7 @@ CEngineAPI::~CEngineAPI()
 			xr_free					(vid_quality_token[i].name);
 
 		xr_free						(vid_quality_token);
-		vid_quality_token			= NULL;
+		vid_quality_token			= nullptr;
 	}
 }
 
@@ -50,9 +45,9 @@ ENGINE_API bool is_enough_address_space_available	()
 
 void CEngineAPI::InitializeNotDedicated()
 {
-	LPCSTR			r2_name	= "xrRender_R2.dll",
-					r3_name	= "xrRender_R3.dll",
-					r4_name	= "xrRender_R4.dll";
+	LPCSTR			r2_name	= "xrRender_R2",
+					r3_name	= "xrRender_R3",
+					r4_name	= "xrRender_R4";
 
 	if (psDeviceFlags.test(rsR4))
 	{
@@ -104,7 +99,7 @@ void CEngineAPI::Initialize(void)
 {
 	//////////////////////////////////////////////////////////////////////////
 	// render
-	LPCSTR			r1_name	= "xrRender_R1.dll";
+	LPCSTR			r1_name	= "xrRender_R1";
 
 		InitializeNotDedicated();
 
@@ -127,10 +122,10 @@ void CEngineAPI::Initialize(void)
 
 	// game	
 	{
-        LPCSTR			g_name = "xrGame.dll";
+        LPCSTR			g_name = "xrGame";
         if (strstr(Core.Params, "-debug_game"))
         {
-            g_name = "xrGame_debug.dll";
+            g_name = "xrGame_debug";
         }
 		Log				("Loading DLL:",g_name);
 		hGame			= LoadLibrary	(g_name);
@@ -139,23 +134,6 @@ void CEngineAPI::Initialize(void)
 		pCreate			= (Factory_Create*)GetProcAddress(hGame,"xrFactory_Create");	R_ASSERT(pCreate);
 		pDestroy		= (Factory_Destroy*)GetProcAddress(hGame,"xrFactory_Destroy");	R_ASSERT(pDestroy);
 	}
-
-	//////////////////////////////////////////////////////////////////////////
-	// vTune
-
-	tune_enabled		= FALSE;
-#ifdef _M_X86 // #DEPRECATED anyway [FX]
-	if (strstr(Core.Params,"-tune"))	{
-		LPCSTR			g_name	= "vTuneAPI.dll";
-		Log				("Loading DLL:",g_name);
-		hTuner			= LoadLibrary	(g_name);
-		if (!hTuner)	R_CHK			(GetLastError());
-		R_ASSERT2		(hTuner,"Intel vTune is not installed");
-		tune_enabled	= TRUE;
-		tune_pause		= (VTPause*)	GetProcAddress(hTuner,"VTPause"		);	R_ASSERT(tune_pause);
-		tune_resume		= (VTResume*)	GetProcAddress(hTuner,"VTResume"	);	R_ASSERT(tune_resume);
-	}
-#endif
 }
 
 void CEngineAPI::Destroy	(void)
@@ -183,9 +161,9 @@ void CEngineAPI::CreateRendererList()
 	bool bSupports_r3 = false;
 	bool bSupports_r4 = false;
 
-	LPCSTR			r2_name	= "xrRender_R2.dll";
-	LPCSTR			r3_name	= "xrRender_R3.dll";
-	LPCSTR			r4_name	= "xrRender_R4.dll";
+	LPCSTR			r2_name	= "xrRender_R2";
+	LPCSTR			r3_name	= "xrRender_R3";
+	LPCSTR			r4_name	= "xrRender_R4";
 
 	if (strstr(Core.Params,"-perfhud_hack"))
 	{
@@ -210,7 +188,7 @@ void CEngineAPI::CreateRendererList()
 
 		// try to initialize R3
 		Log				("Loading DLL:",	r3_name);
-		//	Hide "d3d10.dll not found" message box for XP
+		//	Hide "d3d10 not found" message box for XP
 		SetErrorMode(SEM_FAILCRITICALERRORS);
 		hRender			= LoadLibrary		(r3_name);
 		//	Restore error handling
@@ -225,7 +203,7 @@ void CEngineAPI::CreateRendererList()
 
 		// try to initialize R4
 		Log				("Loading DLL:",	r4_name);
-		//	Hide "d3d10.dll not found" message box for XP
+		//	Hide "d3d10 not found" message box for XP
 		SetErrorMode	(SEM_FAILCRITICALERRORS);
 		hRender			= LoadLibrary		(r4_name);
 		//	Restore error handling

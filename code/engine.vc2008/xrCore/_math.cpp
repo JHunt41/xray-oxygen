@@ -22,7 +22,6 @@ typedef struct _PROCESSOR_POWER_INFORMATION
     ULONG CurrentIdleState;
 } PROCESSOR_POWER_INFORMATION, *PPROCESSOR_POWER_INFORMATION;
  
-#ifdef _M_X64
 namespace	FPU 
 {
 	XRCORE_API void 	m24		(void)	{
@@ -56,75 +55,6 @@ namespace	FPU
 		::Random.seed(u32(CPU::GetCLK() % (1i64 << 32i64)));
 	}
 };
-#else
-u16 getFPUsw() 
-{
-	u16		SW;
-	__asm	fstcw SW;
-	return	SW;
-}
-
-namespace FPU 
-{
-	u16			_24	=0;
-	u16			_24r=0;
-	u16			_53	=0;
-	u16			_53r=0;
-	u16			_64	=0;
-	u16			_64r=0;
-
-	XRCORE_API void 	m24		()	{
-		u16		p	= _24;
-		__asm fldcw p;	
-	}
-	XRCORE_API void 	m24r	()	{
-		u16		p	= _24r;
-		__asm fldcw p;  
-	}
-	XRCORE_API void 	m53		()	{
-		u16		p	= _53;
-		__asm fldcw p;	
-	}
-	XRCORE_API void 	m53r	()	{
-		u16		p	= _53r;
-		__asm fldcw p;	
-	}
-	XRCORE_API void 	m64		()	{ 
-		u16		p	= _64;
-		__asm fldcw p;	
-	}
-	XRCORE_API void 	m64r	()	{
-		u16		p	= _64r;
-		__asm fldcw p;  
-	}
-
-	void		initialize		()
-	{
-		_clear87	();
-
-		_control87	( _PC_24,   MCW_PC );
-		_control87	( _RC_CHOP, MCW_RC );
-		_24			= getFPUsw();	// 24, chop
-		_control87	( _RC_NEAR, MCW_RC );
-		_24r		= getFPUsw();	// 24, rounding
-
-		_control87	( _PC_53,   MCW_PC );
-		_control87	( _RC_CHOP, MCW_RC );
-		_53			= getFPUsw();	// 53, chop
-		_control87	( _RC_NEAR, MCW_RC );
-		_53r		= getFPUsw();	// 53, rounding
-
-		_control87	( _PC_64,   MCW_PC );
-		_control87	( _RC_CHOP, MCW_RC );
-		_64			= getFPUsw();	// 64, chop
-		_control87	( _RC_NEAR, MCW_RC );
-		_64r		= getFPUsw();	// 64, rounding
-
-		m24r		();
-		::Random.seed	( u32(CPU::GetCLK()%(1i64<<32i64)) );
-	}
-};
-#endif
 
 namespace CPU 
 {
@@ -172,15 +102,6 @@ namespace CPU
         }
         return pInfo->MhzLimit * u64(1000000);
     }
-
-	void Detect	()
-	{
-		// General CPU identification
-		if (!query_processor_info(&ID))	
-		{
-			abort();
-		}
-	}
 };
 
 bool g_initialize_cpu_called = false;
@@ -190,26 +111,29 @@ void _initialize_cpu	(void)
 {
 	Msg("* Vendor CPU: %s", CPU::ID.vendor);
     Msg("* Detected CPU: %s", CPU::ID.modelName);
-	Log("* Architecture CPU:", CPU::ID.WoW64 ? "AMD64" : "i386");
 
 //	DUMP_PHASE;
 
 	string256	features;	xr_strcpy(features,sizeof(features),"RDTSC");
-    if (CPU::ID.hasFeature(CpuFeature::Mmx))    xr_strcat(features,", MMX");
-	if (CPU::ID.hasFeature(CpuFeature::_3dNow)) xr_strcat(features, ", 3DNow!");
-	if (CPU::ID.hasFeature(CpuFeature::_3dNowExt)) xr_strcat(features, ", 3DNowExt!");
-    if (CPU::ID.hasFeature(CpuFeature::Sse))    xr_strcat(features,", SSE");
-    if (CPU::ID.hasFeature(CpuFeature::Sse2))   xr_strcat(features,", SSE2");
-    if (CPU::ID.hasFeature(CpuFeature::Sse3))   xr_strcat(features,", SSE3");
-    if (CPU::ID.hasFeature(CpuFeature::MWait))  xr_strcat(features, ", MONITOR/MWAIT");
-    if (CPU::ID.hasFeature(CpuFeature::Ssse3))  xr_strcat(features,", SSSE3");
-    if (CPU::ID.hasFeature(CpuFeature::Sse41))  xr_strcat(features,", SSE4.1");
-    if (CPU::ID.hasFeature(CpuFeature::Sse42))  xr_strcat(features,", SSE4.2");
-	if (CPU::ID.hasFeature(CpuFeature::HT))     xr_strcat(features, ", HTT");
-	if (CPU::ID.hasFeature(CpuFeature::AVX))     xr_strcat(features, ", AVX");
-#if defined(_M_X64) && !defined(AI32_USE)
+    if (CPU::ID.hasFeature(CPUFeature::MMX))    xr_strcat(features,", MMX");
+	if (CPU::ID.hasFeature(CPUFeature::AMD_3DNow)) xr_strcat(features, ", 3DNow!");
+	if (CPU::ID.hasFeature(CPUFeature::AMD_3DNowExt)) xr_strcat(features, ", 3DNowExt!");
+    if (CPU::ID.hasFeature(CPUFeature::SSE))    xr_strcat(features,", SSE");
+    if (CPU::ID.hasFeature(CPUFeature::SSE2))   xr_strcat(features,", SSE2");
+    if (CPU::ID.hasFeature(CPUFeature::SSE3))   xr_strcat(features,", SSE3");
+    if (CPU::ID.hasFeature(CPUFeature::MWait))  xr_strcat(features, ", MONITOR/MWAIT");
+    if (CPU::ID.hasFeature(CPUFeature::SSSE3))  xr_strcat(features,", SSSE3");
+    if (CPU::ID.hasFeature(CPUFeature::SSE41))  xr_strcat(features,", SSE4.1");
+    if (CPU::ID.hasFeature(CPUFeature::SSE42))  xr_strcat(features,", SSE4.2");
+	if (CPU::ID.hasFeature(CPUFeature::HT))     xr_strcat(features, ", HTT");
+	if (CPU::ID.hasFeature(CPUFeature::AVX))    xr_strcat(features, ", AVX");
+#ifndef AI32_USE
 	else Debug.do_exit("X-Ray x64 using AVX anyway!");
 #endif
+	if (CPU::ID.hasFeature(CPUFeature::AVX2))   xr_strcat(features, ", AVX2");
+	if (CPU::ID.hasFeature(CPUFeature::SSE4a))  xr_strcat(features, ", SSE4.a");
+	if (CPU::ID.hasFeature(CPUFeature::MMXExt)) xr_strcat(features, ", MMXExt");
+
 	Msg("* CPU features: %s" , features );
 	Msg("* CPU cores/threads: %d/%d \n", CPU::ID.n_cores, CPU::ID.n_threads);
 
@@ -249,7 +173,7 @@ void _initialize_cpu_thread	()
 	debug_on_thread_spawn	();
 	// fpu & sse 
 	FPU::m24r	();
-	if (CPU::ID.hasFeature(CpuFeature::Sse))
+	if (CPU::ID.hasFeature(CPUFeature::SSE))
 	{
 		_mm_set_flush_zero_mode(_MM_FLUSH_ZERO);
 		if (_denormals_are_zero_supported)	{
@@ -270,7 +194,8 @@ struct THREAD_NAME	{
 	DWORD	dwThreadID;
 	DWORD	dwFlags;
 };
-void	thread_name	(const char* name)
+
+void thread_name(const char* name)
 {
 	THREAD_NAME		tn;
 	tn.dwType		= 0x1000;
@@ -279,11 +204,7 @@ void	thread_name	(const char* name)
 	tn.dwFlags		= 0;
 	__try
 	{
-#ifndef _M_X64
-		RaiseException(0x406D1388, 0, sizeof(tn) / sizeof(unsigned long), (unsigned long*)&tn);
-#else
 		RaiseException(0x406D1388, 0, sizeof(tn) / sizeof(size_t), (size_t*)&tn);
-#endif
 	}
 	__except(EXCEPTION_CONTINUE_EXECUTION)
 	{

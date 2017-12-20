@@ -27,7 +27,7 @@
 
 u32 g_sv_traffic_optimization_level = eto_none;
 
-xrClientData::xrClientData(): IClient(Device.GetTimerGlobal()), ps(nullptr)
+xrClientData::xrClientData(): IClient(Device.GetTimerGlobal())
 {
 	Clear();
 }
@@ -39,13 +39,6 @@ void	xrClientData::Clear()
 	net_Accepted							= FALSE;
 	net_PassUpdates							= TRUE;
 };
-
-
-xrClientData::~xrClientData()
-{
-	xr_delete(ps);
-}
-
 
 xrServer::xrServer() : IPureServer(Device.GetTimerGlobal(), g_dedicated_server)
 {
@@ -167,12 +160,6 @@ void xrServer::GetPooledState(xrClientData* xrCL)
 	if (!pooled_client)
 		return;
 
-	NET_Packet	tmp_packet;
-	u16			tmp_fake;
-	tmp_packet.w_begin				(M_SPAWN);
-	pooled_client->ps->net_Export	(tmp_packet, TRUE);
-	tmp_packet.r_begin				(tmp_fake);
-	xrCL->ps->net_Import			(tmp_packet);
 	xrCL->flags.bReconnect			= TRUE;
 	xr_delete						(pooled_client);
 }
@@ -316,11 +303,8 @@ u32 xrServer::OnDelayedMessage	(NET_Packet& P, ClientID sender)			// Non-Zero me
 	u16						type;
 	P.r_begin				(type);
 
-	//csPlayers.Enter			();
-
 	VERIFY							(verify_entities());
 	xrClientData* CL				= ID_to_client(sender);
-	//R_ASSERT2						(CL, make_string("packet type [%d]",type).c_str());
 
 	switch (type)
 	{
@@ -360,7 +344,7 @@ u32	xrServer::OnMessageSync(NET_Packet& P, ClientID sender)
 }
 
 extern	float	g_fCatchObjectTime;
-u32 xrServer::OnMessage	(NET_Packet& P, ClientID sender)			// Non-Zero means broadcasting with "flags" as returned
+u32 xrServer::OnMessage(NET_Packet& P, ClientID sender)			// Non-Zero means broadcasting with "flags" as returned
 {
 	u16			type;
 	P.r_begin	(type);
@@ -480,8 +464,6 @@ u32 xrServer::OnMessage	(NET_Packet& P, ClientID sender)			// Non-Zero means bro
 		}break;
 	case M_CHAT_MESSAGE:
 		{
-			xrClientData *l_pC			= ID_to_client(sender);
-			OnChatMessage				(&P, l_pC);
 		}break;
 	case M_SV_MAP_NAME:
 		{
@@ -549,12 +531,12 @@ u32 xrServer::OnMessage	(NET_Packet& P, ClientID sender)			// Non-Zero means bro
 		}break;
 	}
 
-	VERIFY							(verify_entities());
+	VERIFY (verify_entities());
 
-	return							IPureServer::OnMessage(P, sender);
+	return 0;
 }
 
-void xrServer::SendTo_LL			(ClientID ID, void* data, u32 size, u32 dwFlags, u32 dwTimeout)
+void xrServer::SendTo_LL(ClientID ID, void* data, u32 size, u32 dwFlags, u32 dwTimeout)
 {
 	// optimize local traffic
 	Level().OnMessage			(data,size);
@@ -653,46 +635,6 @@ CSE_Abstract*	xrServer::GetEntity			(u32 Num)
 	return NULL;
 };
 
-
-void xrServer::OnChatMessage(NET_Packet* P, xrClientData* CL)
-{
-	if (!CL->net_Ready)
-		return;
-
-	struct MessageSenderController
-	{
-		xrServer*			m_owner;
-		s16					m_team;
-		game_PlayerState*	m_sender_ps;
-		NET_Packet*			m_packet;
-		MessageSenderController(xrServer* owner) :
-			m_owner(owner)
-		{}
-		void operator()(IClient* client)
-		{
-			xrClientData* xr_client = static_cast<xrClientData*>(client);
-			game_PlayerState* ps = xr_client->ps;
-			if (!ps)
-				return;
-			if (!xr_client->net_Ready)
-				return;
-			if (m_team != -1 && ps->team != m_team)
-				return;
-			if (m_sender_ps->testFlag(GAME_PLAYER_FLAG_VERY_VERY_DEAD) &&
-				!ps->testFlag(GAME_PLAYER_FLAG_VERY_VERY_DEAD))
-			{
-				return;
-			}
-			m_owner->SendTo(client->ID, *m_packet);
-		}
-	};
-	MessageSenderController	mesenger(this);
-	mesenger.m_team			= P->r_s16();
-	mesenger.m_sender_ps	= CL->ps;
-	mesenger.m_packet		= P;
-	ForEachClientDoSender(mesenger);
-};
-
 #ifdef DEBUG
 
 static	BOOL	_ve_initialized			= FALSE;
@@ -757,12 +699,10 @@ void xrServer::create_direct_client()
 {
 	SClientConnectData cl_data;
 	cl_data.clientID.set(1);
-	xr_strcpy( cl_data.name, "single_player" );
+	xr_strcpy(cl_data.name, "single_player");
 	cl_data.process_id = GetCurrentProcessId();
-	
-	new_client( &cl_data );
+	new_client(&cl_data);
 }
-
 
 void xrServer::ProceedDelayedPackets()
 {
@@ -771,7 +711,6 @@ void xrServer::ProceedDelayedPackets()
 	{
 		DelayedPacket& DPacket	= *m_aDelayedPackets.begin();
 		OnDelayedMessage(DPacket.Packet, DPacket.SenderID);
-//		OnMessage(DPacket.Packet, DPacket.SenderID);
 		m_aDelayedPackets.pop_front();
 	}
 };
@@ -786,7 +725,7 @@ void xrServer::AddDelayedPacket	(NET_Packet& Packet, ClientID Sender)
     std::memcpy(&(NewPacket->Packet),&Packet,sizeof(NET_Packet));
 }
 
-extern	BOOL	g_bCollectStatisticData;
+extern BOOL g_bCollectStatisticData;
 
 void xrServer::GetServerInfo(CServerInfo* si)
 {

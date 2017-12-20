@@ -148,7 +148,6 @@ private:
 	u32							m_dwDeltaUpdate ;
 	u32							m_dwLastNetUpdateTime;
 	void						UpdateDeltaUpd					( u32 LastTime );
-	void						BlockCheatLoad					()				;
 
 	bool						Connect2Server					(const char* options);
 	shared_str					m_client_digest;	//for screenshots
@@ -323,8 +322,6 @@ public:
 	float				GetGameDayTimeSec		();
 	float				GetEnvironmentGameDayTimeSec();
 
-protected:
-//	CFogOfWarMngr*		m_pFogOfWarMngr;
 protected:	
 	CMapManager *			m_map_manager;
 	CGameTaskManager*		m_game_task_manager;

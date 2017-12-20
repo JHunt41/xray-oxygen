@@ -134,6 +134,7 @@ PROTECT_API void InitSettings	()
 
 	CInifile::allow_include_func_t	tmp_functor;
 	tmp_functor.bind([](LPCSTR) { return true; });
+	/*
 	pSettingsAuth					= xr_new<CInifile>(
 		fname,
 		TRUE,
@@ -142,7 +143,7 @@ PROTECT_API void InitSettings	()
 		0,
 		tmp_functor
 	);
-
+	*/
 	FS.update_path				(fname,"$game_config$","game.ltx");
 	pGameIni					= xr_new<CInifile>	(fname,TRUE);
 	CHECK_OR_EXIT				(0!=pGameIni->section_count(), make_string("Cannot find file %s.\nReinstalling application may fix this problem.",fname));
@@ -433,25 +434,13 @@ int APIENTRY WinMain_impl(char* lpCmdLine, int nCmdShow)
 		R_ASSERT				(kernel32);
 
 		typedef BOOL (__stdcall*HeapSetInformation_type) (HANDLE, HEAP_INFORMATION_CLASS, PVOID, SIZE_T);
-		HeapSetInformation_type const heap_set_information = 
-			(HeapSetInformation_type)GetProcAddress(kernel32, "HeapSetInformation");
-		if (heap_set_information) {
+		HeapSetInformation_type const heap_set_information = (HeapSetInformation_type)GetProcAddress(kernel32, "HeapSetInformation");
+		if (heap_set_information) 
+		{
 			ULONG HeapFragValue	= 2;
-#ifdef DEBUG
-			BOOL const result	= 
-#endif // #ifdef DEBUG
-				heap_set_information(
-					GetProcessHeap(),
-					HeapCompatibilityInformation,
-					&HeapFragValue,
-					sizeof(HeapFragValue)
-				);
-			VERIFY2				(result, "can't set process heap low fragmentation");
+			heap_set_information(GetProcessHeap(), HeapCompatibilityInformation, &HeapFragValue, sizeof(HeapFragValue));
 		}
 	}
-
-//	foo();
-#ifndef DEDICATED_SERVER
 
 	// Check for another instance
 #ifdef NO_MULTI_INSTANCES
@@ -471,11 +460,8 @@ int APIENTRY WinMain_impl(char* lpCmdLine, int nCmdShow)
 		return 1;
 	}
 #endif
-#else // DEDICATED_SERVER
-	g_dedicated_server			= true;
-#endif // DEDICATED_SERVER
 
-	SetThreadAffinityMask		(GetCurrentThread(),1);
+	//SetThreadAffinityMask		(GetCurrentThread(),1);
 
 	// Title window
 	logoWindow					= CreateDialog(GetModuleHandle(NULL),	MAKEINTRESOURCE(IDD_STARTUP), 0, logDlgProc );
@@ -490,15 +476,7 @@ int APIENTRY WinMain_impl(char* lpCmdLine, int nCmdShow)
         logoInsertPos = HWND_NOTOPMOST;
     }
 
-	SetWindowPos				(
-		logoWindow,
-        logoInsertPos,
-		0,
-		0,
-		logoRect.right - logoRect.left,
-		logoRect.bottom - logoRect.top,
-		SWP_NOMOVE | SWP_SHOWWINDOW// | SWP_NOSIZE
-	);
+	SetWindowPos(logoWindow, logoInsertPos, 0, 0, logoRect.right - logoRect.left, logoRect.bottom - logoRect.top, SWP_NOMOVE | SWP_SHOWWINDOW);
 	UpdateWindow(logoWindow);
 
 	// AVI
@@ -526,12 +504,7 @@ int APIENTRY WinMain_impl(char* lpCmdLine, int nCmdShow)
 			xr_strcpy( Core.CompName , sizeof( Core.CompName ) , "Computer" );
 	}
 
-#ifndef DEDICATED_SERVER
 	{
-		damn_keys_filter		filter;
-		(void)filter;
-#endif // DEDICATED_SERVER
-
 		FPU::m24r				();
 		InitEngine				();
 
@@ -551,7 +524,6 @@ int APIENTRY WinMain_impl(char* lpCmdLine, int nCmdShow)
 			return 0;
 		}
 
-#ifndef DEDICATED_SERVER
 		if(strstr(Core.Params,"-r2a"))	
 			Console->Execute			("renderer renderer_r2a");
 		else
@@ -563,41 +535,18 @@ int APIENTRY WinMain_impl(char* lpCmdLine, int nCmdShow)
 			pTmp->Execute				(Console->ConfigFile);
 			xr_delete					(pTmp);
 		}
-#else
-			Console->Execute			("renderer renderer_r1");
-#endif
-//.		InitInput					( );
+
 		Engine.External.Initialize	( );
 		Console->Execute			("stat_memory");
 
 		Startup	 					( );
 		Core._destroy				( );
-
-		// check for need to execute something external
-		if (/*xr_strlen(g_sLaunchOnExit_params) && */xr_strlen(g_sLaunchOnExit_app) ) 
-		{
-			//CreateProcess need to return results to next two structures
-			STARTUPINFO si;
-			PROCESS_INFORMATION pi;
-            std::memset(&si,0,sizeof(si));
-			si.cb = sizeof(si);
-            std::memset(&pi,0,sizeof(pi));
-			//We use CreateProcess to setup working folder
-			char const * temp_wf = (xr_strlen(g_sLaunchWorkingFolder) > 0) ? g_sLaunchWorkingFolder : NULL;
-			CreateProcess(g_sLaunchOnExit_app, g_sLaunchOnExit_params, NULL, NULL, FALSE, 0, NULL, 
-				temp_wf, &si, &pi);
-
-		}
-#ifndef DEDICATED_SERVER
 #ifdef NO_MULTI_INSTANCES		
 		// Delete application presence mutex
 		CloseHandle( hCheckPresenceMutex );
 #endif
 	}
-	// here damn_keys_filter class instanse will be destroyed
-#endif // DEDICATED_SERVER
-
-	return						0;
+	return 0;
 }
 
 int APIENTRY WinMain(HINSTANCE hInsttance, HINSTANCE hPrevInstance, char* lpCmdLine, int nCmdShow)
@@ -615,7 +564,6 @@ int APIENTRY WinMain(HINSTANCE hInsttance, HINSTANCE hPrevInstance, char* lpCmdL
 	}
 
 	WinMain_impl(params.data(),sizeof(params));
-	//WinMain_impl(const_cast<char*>(params.c_str()), sizeof(params));
 
 	return 0;
 }

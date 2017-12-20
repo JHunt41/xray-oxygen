@@ -686,9 +686,6 @@
     <ClCompile Include="bone.cpp">
       <Filter>Game API\Animator</Filter>
     </ClCompile>
-    <ClCompile Include="Envelope.cpp">
-      <Filter>Game API\Animator</Filter>
-    </ClCompile>
     <ClCompile Include="interp.cpp">
       <Filter>Game API\Animator</Filter>
     </ClCompile>
@@ -741,9 +738,6 @@
       <Filter>Interfaces\Render\Execution &amp; 3D\Shaders\Textures</Filter>
     </ClCompile>
     <ClCompile Include="xrTheora_Surface.cpp">
-      <Filter>Interfaces\Render\Execution &amp; 3D\Shaders\Textures</Filter>
-    </ClCompile>
-    <ClCompile Include="xrTheora_Surface_mmx.cpp">
       <Filter>Interfaces\Render\Execution &amp; 3D\Shaders\Textures</Filter>
     </ClCompile>
     <ClCompile Include="Text_Console.cpp">

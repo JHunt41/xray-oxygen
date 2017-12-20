@@ -1,6 +1,6 @@
 #pragma once
 
-enum	EGameActions
+enum EGameActions
 {
 	kLEFT,
 	kRIGHT,
@@ -51,28 +51,14 @@ enum	EGameActions
 	kDROP,
 	kUSE,
 	kSCORES,
-	kCHAT,
-	kCHAT_TEAM,
 	kSCREENSHOT,
 	kQUIT,
 	kCONSOLE,
 	kINVENTORY,
-	kBUY,
-	kSKIN,
-	kTEAM,
 	kACTIVE_JOBS,
-						
-	kVOTE_BEGIN,
-	kSHOW_ADMIN_MENU,
-	kVOTE,
-	kVOTEYES,
-	kVOTENO,
 						
 	kNEXT_SLOT,
 	kPREV_SLOT,
-						
-	kSPEECH_MENU_0,
-	kSPEECH_MENU_1,
 						
 	kQUICK_USE_1,
 	kQUICK_USE_2,		
@@ -97,7 +83,6 @@ struct _keyboard
 enum _key_group{
 	_both	=	(1<<0)			,
 	_sp		=	_both | (1<<1)	,
-	_mp		=	_both | (1<<2)	,
 };
 
 extern _key_group g_current_keygroup;

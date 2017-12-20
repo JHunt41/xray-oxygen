@@ -157,16 +157,16 @@ public:
 	virtual void InitAddons();
 
 	//для отоброажения иконок апгрейдов в интерфейсе
-	int	GetScopeX() {return pSettings->r_s32(m_scopes[m_cur_scope], "scope_x");}
-	int	GetScopeY() {return pSettings->r_s32(m_scopes[m_cur_scope], "scope_y");}
+	int	GetScopeX() {return pSettings->r_s32Std(m_scopes[m_cur_scope], "scope_x");}
+	int	GetScopeY() {return pSettings->r_s32Std(m_scopes[m_cur_scope], "scope_y");}
 	int	GetSilencerX() {return m_iSilencerX;}
 	int	GetSilencerY() {return m_iSilencerY;}
 	int	GetGrenadeLauncherX() {return m_iGrenadeLauncherX;}
 	int	GetGrenadeLauncherY() {return m_iGrenadeLauncherY;}
 
-	const shared_str& GetGrenadeLauncherName	() const{return m_sGrenadeLauncherName;}
-	const shared_str GetScopeName				() const{return pSettings->r_string(m_scopes[m_cur_scope], "scope_name");}
-	const shared_str& GetSilencerName			() const{return m_sSilencerName;}
+	const std::string& GetGrenadeLauncherName	() const{return m_sGrenadeLauncherName;}
+	const std::string GetScopeName				() const{return pSettings->r_stringStd(m_scopes[m_cur_scope], "scope_name");}
+	const std::string& GetSilencerName			() const{return m_sSilencerName;}
 
 	IC void	ForceUpdateAmmo						()		{ m_BriefInfo_CalcFrame = 0; }
 
@@ -182,9 +182,9 @@ protected:
 	ALife::EWeaponAddonStatus	m_eGrenadeLauncherStatus;
 
 	//названия секций подключаемых аддонов
-	shared_str		m_sScopeName;
-	shared_str		m_sSilencerName;
-	shared_str		m_sGrenadeLauncherName;
+	std::string		m_sScopeName;
+	std::string		m_sSilencerName;
+	std::string		m_sGrenadeLauncherName;
 
 	//смещение иконов апгрейдов в инвентаре
 	int	m_iScopeX, m_iScopeY;
@@ -389,7 +389,7 @@ protected:
 			void			StopFlameParticles2	();
 			void			UpdateFlameParticles2();
 protected:
-	shared_str				m_sFlameParticles2;
+	std::string				m_sFlameParticles2;
 	//объект партиклов для стрельбы из 2-го ствола
 	CParticlesObject*		m_pFlameParticles2;
 
@@ -398,7 +398,7 @@ protected:
 	int						GetAmmoCount		(u8 ammo_type) const;
 
 public:
-	IC int					GetAmmoElapsed		()	const		{	return /*int(m_magazine.size())*/iAmmoElapsed;}
+	IC int					GetAmmoElapsed		()	const		{	return iAmmoElapsed;}
 	IC int					GetAmmoMagSize		()	const		{	return iMagazineSize;						}
 	int						GetSuitableAmmoTotal(bool use_item_to_spawn = false) const;
 
@@ -430,26 +430,13 @@ protected:
 
 public:
 	xr_vector<shared_str>	m_ammoTypes;
-/*
-	struct SScopes
-	{
-		shared_str			m_sScopeName;
-		int					m_iScopeX;
-		int					m_iScopeY;
-	};
-	DEFINE_VECTOR(SScopes*, SCOPES_VECTOR, SCOPES_VECTOR_IT);
-	SCOPES_VECTOR			m_scopes;
 
-	u8						cur_scope;
-*/
-
-	using SCOPES_VECTOR = xr_vector<shared_str>;
+	using SCOPES_VECTOR = xr_vector<std::string>;
 	SCOPES_VECTOR			m_scopes;
 	u8						m_cur_scope;
 
 	CWeaponAmmo*			m_pCurrentAmmo;
 	u8						m_ammoType;
-//-	shared_str				m_ammoName; <== deleted
 	bool					m_bHasTracers;
 	u8						m_u8TracerColorID;
 	u8						m_set_next_ammoType_on_reload;
